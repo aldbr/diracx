@@ -20,6 +20,7 @@ from azure.core.credentials_async import AsyncTokenCredential
 from azure.core.pipeline import PipelineRequest
 from azure.core.pipeline.policies import AsyncBearerTokenCredentialPolicy
 
+
 from diracx.core.preferences import get_diracx_preferences, DiracxPreferences
 
 from ..utils import (

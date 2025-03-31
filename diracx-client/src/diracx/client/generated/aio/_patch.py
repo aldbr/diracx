@@ -10,7 +10,7 @@ from typing import List
 
 
 __all__: List[str] = [
-    # "DiracClient",
+    "DiracClient",
 ]  # Add all objects you want publicly available to users at this package level
 
 
@@ -21,3 +21,6 @@ def patch_sdk():
     you can't accomplish using the techniques described in
     https://aka.ms/azsdk/python/dpcodegen/python/customize
     """
+
+
+from diracx.client.aio import DiracClient

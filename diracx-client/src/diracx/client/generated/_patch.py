@@ -24,4 +24,4 @@ def patch_sdk():
     """
 
 
-from ..patches import DiracClient
+from diracx.client.patches import DiracClient

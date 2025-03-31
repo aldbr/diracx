@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 import fcntl
+import io
 import json
 import os
 from diracx.core.utils import EXPIRES_GRACE_SECONDS, serialize_credentials
@@ -21,6 +22,7 @@ from azure.core.credentials import AccessToken
 from azure.core.credentials import TokenCredential
 from azure.core.pipeline import PipelineRequest
 from azure.core.pipeline.policies import BearerTokenCredentialPolicy
+
 
 from diracx.core.models import TokenResponse
 from diracx.core.preferences import DiracxPreferences, get_diracx_preferences

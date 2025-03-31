@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import List
 
-from .utils import DiracClientMixin
-
+from .utils import (
+    DiracClientMixin,
+)
 
 from diracx.core.extensions import select_from_extension
 
