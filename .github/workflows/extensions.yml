@@ -3,10 +3,10 @@ name: Extensions full test
 on:
   push:
     branches:
-      - main
+      - main_FEAT_deploy-gubbins-test
   pull_request:
     branches:
-      - main
+      - main_FEAT_deploy-gubbins-test
 
 
 defaults:
@@ -71,7 +71,7 @@ jobs:
   build-wheels:
     name: Build wheels
     runs-on: "ubuntu-latest"
-    if: github.event_name != 'push' || github.repository == 'DIRACGrid/diracx'
+    if: github.event_name != 'push' || github.repository == 'aldbr/diracx'
     defaults:
       run:
         # We need extglob for REFERENCE_BRANCH substitution
@@ -152,8 +152,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: extensions/containers/services
-          tags: ghcr.io/diracgrid/gubbins/services:dev
-          push: ${{ github.event_name != 'pull_request' && github.repository == 'DIRACGrid/diracx' && github.ref_name == 'main' }}
+          tags: ghcr.io/aldbr/gubbins/services:dev
+          push: ${{ github.event_name != 'pull_request' && github.repository == 'aldbr/diracx' && github.ref_name == 'main_FEAT_deploy-gubbins-test' }}
           build-args: |
             EXTRA_PACKAGES_TO_INSTALL=git+https://github.com/DIRACGrid/DIRAC.git@integration
             EXTENSION_CUSTOM_SOURCES_TO_INSTALL=/bindmount/gubbins_db*.whl,/bindmount/gubbins_logic*.whl,/bindmount/gubbins_routers*.whl,/bindmount/gubbins_client*.whl
@@ -161,8 +161,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: extensions/containers/client
-          tags: ghcr.io/diracgrid/gubbins/client:dev
-          push: ${{ github.event_name != 'pull_request' && github.repository == 'DIRACGrid/diracx' && github.ref_name == 'main' }}
+          tags: ghcr.io/aldbr/gubbins/client:dev
+          push: ${{ github.event_name != 'pull_request' && github.repository == 'aldbr/diracx' && github.ref_name == 'main_FEAT_deploy-gubbins-test' }}
 
   pytest-integration:
     needs: build-image

@@ -3,7 +3,7 @@ global:
   imagePullPolicy: Always
   images:
     tag: dev
-    services: ghcr.io/diracgrid/gubbins/services
+    services: ghcr.io/aldbr/gubbins/services
 
 developer:
   enabled: true
