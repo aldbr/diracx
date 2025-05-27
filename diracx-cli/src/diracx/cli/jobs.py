@@ -5,14 +5,20 @@ from __future__ import annotations
 __all__ = ("app",)
 
 import json
-import re
-from typing import Annotated, cast
+from pathlib import Path
+from typing import Annotated
 
 from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress
 from rich.table import Table
+from rich.text import Text
 from typer import FileText, Option
 
-from diracx.client.aio import AsyncDiracClient
+from diracx.api.jobs import ContentRange, get_job_sandbox
+from diracx.api.jobs import download_sandbox as api_download_sandbox
+from diracx.api.jobs import search as api_search
+from diracx.api.jobs import submit as api_submit
 from diracx.core.models import ScalarSearchOperator, SearchSpec, VectorSearchOperator
 from diracx.core.preferences import OutputFormats, get_diracx_preferences
 
@@ -66,47 +72,103 @@ async def search(
     per_page: int = 10,
 ):
     search_specs = [parse_condition(cond) for cond in condition]
-    async with AsyncDiracClient() as api:
-        jobs, content_range = await api.jobs.search(
-            parameters=None if all else parameter,
-            search=search_specs if search_specs else None,
-            page=page,
-            per_page=per_page,
-            cls=lambda _, jobs, headers: (
-                jobs,
-                ContentRange(headers.get("Content-Range", "jobs")),
-            ),
+
+    jobs, content_range = await api_search(
+        parameter=parameter,
+        search_specs=search_specs,
+        all=all,
+        page=page,
+        per_page=per_page,
+    )
+
+    display(jobs, content_range)
+
+
+@app.async_command()
+async def submit(jdls: list[FileText]):
+    console = Console()
+
+    if not jdls:
+        console.print(
+            Panel(
+                "[yellow]No JDL files provided. Please specify at least one JDL file.[/yellow]",
+                title="Submission Error",
+            )
+        )
+        return
+
+    jobs = await api_submit([f.read() for f in jdls])
+
+    if not jobs:
+        console.print(
+            Panel("[yellow]No jobs were submitted.[/yellow]", title="Submission Result")
+        )
+        return
+
+    job_ids = []
+    for job in jobs:
+        job_id = (
+            job.get("job_id") if isinstance(job, dict) else getattr(job, "job_id", None)
+        )
+        if job_id is not None:
+            job_ids.append(str(job_id))
+    if job_ids:
+        console.print(
+            Panel(
+                Text(
+                    f"Inserted {len(job_ids)} jobs with ids: {', '.join(job_ids)}",
+                    style="green",
+                ),
+                title="Submission Result",
+                border_style="green",
+            )
+        )
+    else:
+        console.print(
+            Panel(
+                "[red]No job IDs returned from submission.[/red]",
+                title="Submission Result",
+            )
         )
 
-    display(jobs, cast(ContentRange, content_range))
 
+@app.async_command()
+async def download_sandbox(
+    job_id: int,
+    sandbox_type: Annotated[
+        str, Option(help="Type of sandbox to download: 'input', 'output', or 'all'")
+    ] = "all",
+    destination: Annotated[str, Option(help="Directory to save the sandboxes")] = ".",
+):
+    dest_path = Path(destination)
+    dest_path.mkdir(parents=True, exist_ok=True)
 
-class ContentRange:
-    unit: str | None = None
-    start: int | None = None
-    end: int | None = None
-    total: int | None = None
+    sandboxes = get_job_sandbox(job_id=job_id, sandbox_type=sandbox_type)
 
-    def __init__(self, header: str):
-        if match := re.fullmatch(r"(\w+) (\d+-\d+|\*)/(\d+|\*)", header):
-            self.unit, range, total = match.groups()
-            self.total = int(total)
-            if range != "*":
-                self.start, self.end = map(int, range.split("-"))
-        elif match := re.fullmatch(r"\w+", header):
-            self.unit = match.group()
-
-    @property
-    def caption(self):
-        if self.start is None and self.end is None:
-            range_str = "all"
-        else:
-            range_str = (
-                f"{self.start if self.start is not None else 'unknown'}-"
-                f"{self.end if self.end is not None else 'unknown'} "
-                f"of {self.total or 'unknown'}"
+    if not sandboxes:
+        Console().print(
+            Panel(
+                f"[yellow]No sandboxes found for job {job_id}.[/yellow]",
+                title="Download Sandboxes",
             )
-        return f"Showing {range_str} {self.unit}"
+        )
+        return
+
+    with Progress() as progress:
+        task = progress.add_task("Downloading sandboxes...", total=len(sandboxes))
+        for s_type, pfn in sandboxes:
+            subdir = dest_path / s_type
+            subdir.mkdir(parents=True, exist_ok=True)
+            try:
+                await api_download_sandbox(pfn, subdir)
+                progress.console.print(
+                    f"[green]Downloaded {s_type} sandbox to {subdir}[/green]"
+                )
+            except Exception as e:
+                progress.console.print(
+                    f"[red]Failed to download {s_type} sandbox: {e}[/red]"
+                )
+            progress.advance(task)
 
 
 def display(data, content_range: ContentRange):
@@ -147,12 +209,3 @@ def display_rich(data, content_range: ContentRange) -> None:
         for job in data:
             table.add_row(*map(str, job.values()))
     console.print(table)
-
-
-@app.async_command()
-async def submit(jdl: list[FileText]):
-    async with AsyncDiracClient() as api:
-        jobs = await api.jobs.submit_jdl_jobs([x.read() for x in jdl])
-    print(
-        f"Inserted {len(jobs)} jobs with ids: {','.join(map(str, (job.job_id for job in jobs)))}"
-    )
