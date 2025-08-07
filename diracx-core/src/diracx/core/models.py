@@ -75,11 +75,11 @@ class SearchParams(BaseModel):
     # TODO: Add more validation
 
 
-class JobParameters(BaseModel, extra="forbid"):
+class JobParameters(BaseModel):
     """All the parameters that can be set for a job."""
 
     timestamp: datetime | None = None
-    cpu_normalization_factor: int | None = Field(None, alias="CPUNormalizationFactor")
+    cpu_normalization_factor: float | None = Field(None, alias="CPUNormalizationFactor")
     norm_cpu_time_s: int | None = Field(None, alias="NormCPUTime(s)")
     total_cpu_time_s: int | None = Field(None, alias="TotalCPUTime(s)")
     host_name: str | None = Field(None, alias="HostName")
@@ -96,7 +96,7 @@ class JobParameters(BaseModel, extra="forbid"):
     job_status: str | None = Field(None, alias="JobStatus")
 
 
-class JobAttributes(BaseModel, extra="forbid"):
+class JobAttributes(BaseModel):
     """All the attributes that can be set for a job."""
 
     job_type: str | None = Field(None, alias="JobType")
