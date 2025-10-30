@@ -184,6 +184,9 @@ class BaseOSDB(metaclass=ABCMeta):
 
     async def upsert(self, vo: str, doc_id: int, document: Any) -> None:
         index_name = self.index_name(vo, doc_id)
+        logger.info(
+            "Upserting document %s: %s in index %s", doc_id, document, index_name
+        )
         response = await self.client.update(
             index=index_name,
             id=doc_id,
