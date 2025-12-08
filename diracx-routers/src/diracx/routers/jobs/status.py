@@ -273,6 +273,7 @@ async def patch_metadata(
     The argument  are all the attributes/parameters of a job (except the ID).
     """
     await check_permissions(action=ActionType.MANAGE, job_db=job_db, job_ids=updates)
+    print("Updating job metadata:", updates)
     try:
         await set_job_parameters_or_attributes_bl(updates, job_db, job_parameters_db)
     except ValueError as e:
