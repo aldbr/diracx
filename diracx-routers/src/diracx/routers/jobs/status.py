@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Annotated, Any
 
-from fastapi import Body, HTTPException, Query
+from fastapi import Body, HTTPException, Query, Request
 
 from diracx.core.models import (
     HeartbeatData,
@@ -264,6 +264,7 @@ EXAMPLE_METADATA = {
 
 @router.patch("/metadata", status_code=HTTPStatus.NO_CONTENT)
 async def patch_metadata(
+    request: Request,
     updates: Annotated[dict[int, JobMetaData], Body(openapi_examples=EXAMPLE_METADATA)],
     job_db: JobDB,
     job_parameters_db: JobParametersDB,
@@ -272,8 +273,10 @@ async def patch_metadata(
     """Update job metadata such as UserPriority, HeartBeatTime, JobType, etc.
     The argument  are all the attributes/parameters of a job (except the ID).
     """
+    raw_body = await request.body()
+    print("Received request body for patching job metadata:", raw_body.decode())
     await check_permissions(action=ActionType.MANAGE, job_db=job_db, job_ids=updates)
-    print("Updating job metadata:", updates)
+    print("Validated job metadata:", updates)
     try:
         await set_job_parameters_or_attributes_bl(updates, job_db, job_parameters_db)
     except ValueError as e:
