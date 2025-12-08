@@ -35,7 +35,7 @@ class JobParametersDB(BaseOSDB):
         return f"{self.index_prefix}_{vo.lower()}_{split}m"
 
     def upsert(self, vo, doc_id, document):
-        print(f"Upserting job parameters for JobID {doc_id} in VO {vo}")
+        print(f"Upserting job parameters for JobID {doc_id} in VO {vo}: {document}")
         document = {
             "JobID": doc_id,
             "timestamp": int(datetime.now(tz=UTC).timestamp() * 1000),
