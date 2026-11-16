@@ -40,6 +40,13 @@ RUN pixi shell-hook -e ${PIXI_ENV} > /activate.sh
 
 FROM ubuntu:26.04
 
+# Without these, the image inherits the Ubuntu base image labels. Renovate reads
+# the source label to link release notes into its version bump PRs.
+LABEL org.opencontainers.image.source="https://github.com/DIRACGrid/diracx" \
+      org.opencontainers.image.title="diracx" \
+      org.opencontainers.image.description="DiracX services, tasks and client" \
+      org.opencontainers.image.licenses="GPL-3.0-only"
+
 ARG PIXI_ENV=container-services
 ENV PIXI_ENV=${PIXI_ENV}
 
